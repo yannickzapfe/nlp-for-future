@@ -1,17 +1,23 @@
-from keras import Input
-from tcn import TCN
-
+import sys
 import preprocessing
 
-from sklearn.metrics import accuracy_score, mean_squared_error
-from sklearn.model_selection import train_test_split
+from keras import Input
+from tcn import TCN
 
 from keras.models import Model
 from keras.layers.core import Dense, Dropout
 from keras.layers import SpatialDropout1D, GlobalAveragePooling1D, GlobalMaxPooling1D, concatenate
 from keras.layers.embeddings import Embedding
 
-books_data = preprocessing.load_books_rating_data(1000)
+from sklearn.metrics import accuracy_score, mean_squared_error
+from sklearn.model_selection import train_test_split
+
+if len(sys.argv) > 1:
+    n_first = int(sys.argv[1])
+else:
+    n_first = 1000
+
+books_data = preprocessing.load_books_rating_data(n_first)
 
 X_tokenized = preprocessing.tokenize(books_data.review)
 
@@ -32,6 +38,7 @@ X_train, X_test, y_train_one_hot, y_test_one_hot = train_test_split(X_padded, y_
 
 embeddings_matrix = preprocessing.create_embeddings_matrix(word_index)
 input_length = len(X_padded[0])
+
 
 def tcn_model(input_length, emb_matrix):
     inp = Input(shape=(input_length,))
@@ -61,11 +68,13 @@ def tcn_model(input_length, emb_matrix):
 
     return model
 
+
 deep_model = tcn_model(input_length, embeddings_matrix)
 
 BATCH_SIZE = 1024
 EPOCHS = 8
-history = deep_model.fit(X_train, y_train_one_hot, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1, validation_split=0.2)
+history = deep_model.fit(X_train, y_train_one_hot, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1,
+                         validation_split=0.2)
 
 predictions_one_hot = deep_model.predict(X_test)
 predictions = [list(one_hot).index(max(one_hot)) + 1 for one_hot in predictions_one_hot]
