@@ -4,10 +4,8 @@ import numpy as np
 import pandas as pd
 
 from imblearn.under_sampling import RandomUnderSampler
-from keras.models import Sequential
-from keras.layers.core import Dense, Dropout
-from keras.layers import Flatten
-from keras.layers.embeddings import Embedding
+from keras import Sequential
+from keras.layers import Embedding, Flatten, Dropout, Dense
 from keras.preprocessing.sequence import pad_sequences
 from keras.utils import np_utils
 from nltk.tokenize import word_tokenize

@@ -1,13 +1,12 @@
 import sys
+
+from keras.layers import Embedding, SpatialDropout1D, GlobalAveragePooling1D, GlobalMaxPooling1D, concatenate, Dense, \
+    Dropout
+
 import preprocessing
 
-from keras import Input
+from keras import Input, Model
 from tcn import TCN
-
-from keras.models import Model
-from keras.layers.core import Dense, Dropout
-from keras.layers import SpatialDropout1D, GlobalAveragePooling1D, GlobalMaxPooling1D, concatenate
-from keras.layers.embeddings import Embedding
 
 from sklearn.metrics import accuracy_score, mean_squared_error
 from sklearn.model_selection import train_test_split
