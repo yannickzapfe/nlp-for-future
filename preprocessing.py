@@ -4,7 +4,10 @@ import numpy as np
 import pandas as pd
 
 from imblearn.under_sampling import RandomUnderSampler
-from keras.preprocessing.text import Tokenizer
+from keras.models import Sequential
+from keras.layers.core import Dense, Dropout
+from keras.layers import Flatten
+from keras.layers.embeddings import Embedding
 from keras.preprocessing.sequence import pad_sequences
 from keras.utils import np_utils
 from nltk.tokenize import word_tokenize
@@ -14,9 +17,9 @@ from nltk.corpus import stopwords
 # Load first n book reviews including the review text and score in a dataframe.
 def load_books_rating_data(first_n):
     if first_n and ('reviews' + str(first_n) + '.csv') in os.listdir('data'):
-        return pd.read_csv('data/reviews' + str(first_n) + '.csv')
+        return pd.read_csv('../nlp-for-future-data/reviews' + str(first_n) + '.csv')
 
-    books_data_raw = pd.read_csv('data/Books_rating.csv')
+    books_data_raw = pd.read_csv('../nlp-for-future-data/Books_rating.csv')
 
     books_data = books_data_raw[['review/score', 'review/text']].copy()
     books_data.rename(columns={'review/score': 'score', 'review/text': 'review'}, inplace=True)
@@ -75,7 +78,7 @@ def create_embeddings_matrix(word_index):
     # Load embeddings from file.
     embeddings_dict = {}
     # TODO: Try 100d and pass as param to function.
-    embeddings_file = open('data/glove.6B.300d.txt', encoding="utf8")
+    embeddings_file = open('../nlp-for-future-data/glove.6B.300d.txt', encoding="utf8")
     for line in embeddings_file:
         values = line.split()
         word = values[0]
@@ -99,7 +102,7 @@ def create_embeddings_matrix(word_index):
 def nn_preprocess(first_n):
     books_data = load_books_rating_data(first_n)
 
-    X_balanced, y_balanced = under_sample(np.array(books_data.text).reshape(-1, 1), books_data.score)
+    X_balanced, y_balanced = under_sample(np.array(books_data.review).reshape(-1, 1), books_data.score)
     X_balanced = [sent[0] for sent in X_balanced]
 
     X_tokenized = tokenize(X_balanced)
@@ -117,4 +120,50 @@ def nn_preprocess(first_n):
 
     embeddings_matrix = create_embeddings_matrix(word_index)
 
-    return X_balanced, y_balanced, embeddings_matrix
+    return X_padded, y_balanced, embeddings_matrix
+
+
+def get_nn_classifier(embeddings_matrix, input_length):
+    model = Sequential()
+
+    embedding_layer = Embedding(
+        embeddings_matrix.shape[0],
+        embeddings_matrix.shape[1],
+        weights=[embeddings_matrix],
+        input_length=input_length,
+        trainable=False
+    )
+    model.add(embedding_layer)
+
+    model.add(Flatten())
+    model.add(Dropout(0.2))
+    model.add(Dense(32, activation='relu'))
+    model.add(Dropout(0.2))
+    model.add(Dense(32, activation='relu'))
+    model.add(Dense(5, activation='softmax'))
+
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+    return model
+
+
+def get_nn_linear(embeddings_matrix, input_length):
+    model = Sequential()
+
+    embedding_layer = Embedding(
+        embeddings_matrix.shape[0],
+        embeddings_matrix.shape[1],
+        weights=[embeddings_matrix],
+        input_length=input_length,
+        trainable=False
+    )
+    model.add(embedding_layer)
+
+    model.add(Flatten())
+    model.add(Dense(32, activation='relu'))
+    model.add(Dense(32, activation='relu'))
+    model.add(Dense(1, activation='relu'))
+
+    model.compile(optimizer='adam', loss='mean_squared_error')
+
+    return model
