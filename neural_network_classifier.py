@@ -5,6 +5,8 @@ from keras.layers import Embedding, SpatialDropout1D, GlobalAveragePooling1D, Gl
 
 import preprocessing
 
+import tensorflow as tf
+
 from keras import Input, Model
 from tcn import TCN
 
@@ -67,13 +69,11 @@ def tcn_model(input_length, emb_matrix):
 
     return model
 
-
 deep_model = tcn_model(input_length, embeddings_matrix)
 
-BATCH_SIZE = 1024
 EPOCHS = 8
-history = deep_model.fit(X_train, y_train_one_hot, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1,
-                         validation_split=0.2)
+BATCH_SIZE = 64
+history = deep_model.fit(X_train, y_train_one_hot, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1, validation_split=0.2)
 
 predictions_one_hot = deep_model.predict(X_test)
 predictions = [list(one_hot).index(max(one_hot)) + 1 for one_hot in predictions_one_hot]
