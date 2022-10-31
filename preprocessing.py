@@ -1,12 +1,16 @@
 import os
+
 import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+
 import numpy as np
 import pandas as pd
 
 from imblearn.under_sampling import RandomUnderSampler
 from keras import Sequential
 from keras.layers import Embedding, Flatten, Dropout, Dense
-from keras.preprocessing.sequence import pad_sequences
+from keras_preprocessing.sequence import pad_sequences
 from keras.utils import np_utils
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
@@ -14,7 +18,7 @@ from nltk.corpus import stopwords
 
 # Load first n book reviews including the review text and score in a dataframe.
 def load_books_rating_data(first_n):
-    if first_n and ('reviews' + str(first_n) + '.csv') in os.listdir('data'):
+    if first_n and ('reviews' + str(first_n) + '.csv') in os.listdir('../nlp-for-future-data'):
         return pd.read_csv('../nlp-for-future-data/reviews' + str(first_n) + '.csv')
 
     books_data_raw = pd.read_csv('../nlp-for-future-data/Books_rating.csv')
