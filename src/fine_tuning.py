@@ -2,18 +2,34 @@ from types import SimpleNamespace
 
 from transformers import TrainingArguments, AutoModelForSequenceClassification, Trainer
 
+validation_set_size = SimpleNamespace(**{
+    "xs": 10,
+    "s": 100,
+    "m": 1000,
+    "l": 10000,
+    "xl": 100000,
+    "xxl": 200000,
+    "xxxl": 500000,
+    "all": 750000
+})
+
 settings = SimpleNamespace(**{
-    "re_train_net": True,
-    # "model_names": ['distilbert-base-cased',
-    #                 'distilbert-base-uncased',
-    #                 'bert-base-cased',
-    #                 'bert-base-uncased',
-    #                 'distilroberta-base']
-    # "model_name": 'distilbert-base-cased'
-    # "model_name": 'distilbert-base-uncased'
-    # "model_name": 'bert-base-cased'
-    "model_name": 'bert-base-uncased'
-    # "model_name": 'distilroberta-base'
+    "re_train_net": False,
+    "validation_size": validation_set_size.m,
+    "train_test_splitfactor": 0.5,
+    "test_eval_splitfactor": 0.5,
+    "eval_for_comparing": False,
+    # "model_names": [
+    #     'bert-base-cased',
+    #     'distilbert-base-cased',
+    #     'distilbert-base-uncased',
+    #     'distilroberta-base'
+    # ],
+    # "model_name": 'distilbert-base-cased',
+    # "model_name": 'distilbert-base-uncased',
+    # "model_name": 'bert-base-cased',
+    # "model_name": 'bert-base-uncased',
+    "model_name": 'distilroberta-base',
 })
 
 
@@ -46,7 +62,7 @@ def get_trainer(
         learning_rate=learning_rate,
         auto_find_batch_size=auto_find_batch_size,
         save_strategy="no"
-        #no_cuda=True
+        # no_cuda=True
     )
 
     trainer = Trainer(

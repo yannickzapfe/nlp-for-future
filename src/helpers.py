@@ -85,8 +85,9 @@ def is_dir_empty(path):
 def get_cm_as_dict(matrix):
     cm_dict = {}
     max_len = len(str(matrix.max()))
+    cm_dict["   "] = str([str(float(num+1)).rjust(max_len) for num in range(0,5)])
     for index, row in enumerate(matrix):
-        cm_dict[index] = str([str(num).rjust(max_len) for num in row])
+        cm_dict[str(float(index+1))] = str([str(num).rjust(max_len) for num in row])
 
     return cm_dict
 
@@ -102,10 +103,21 @@ def get_class_report_as_dict(report):
     return cr_dict
 
 
-def write_dict_to_json(name, path, results):
-    with open(f"{path}/{name}.json", "w") as outfile:
+def sample_random_points(sample_size=100, base_count=750000, seed=None):
+    books_data = pd.read_csv(f'../data/Reviews_data/reviews{base_count}.csv')
+    if sample_size > base_count:
+        print(f"Attempted to take more samples than base data has.\n-> Taking all data from base data ({base_count}).")
+        sample_size = base_count
+    samples = books_data.sample(n=sample_size, random_state=seed)
+    return samples.review.tolist(), samples.score.tolist()
+
+
+def write_dict_to_json(name, path, results, postfix=""):
+    post = f"_{postfix}" if postfix else ""
+    full_path = f"{path}/{name}{post}.json"
+    with open(full_path, "w") as outfile:
         json.dump(results, outfile, indent=4, sort_keys=True)
-        print(f"Saved {name} to {path}/{name}.json.")
+        print(f"Saved {name} to {full_path}.")
 
 
 # Print iterations progress
