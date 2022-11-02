@@ -5,7 +5,8 @@ import time
 
 import pandas as pd
 import torch
-
+from matplotlib import pyplot as plt
+import seaborn as sns
 
 def print_task_header(text, length=60, space_below=False, space_size=3):
     print("\n\n\n")
@@ -120,6 +121,14 @@ def write_dict_to_json(name, path, results, postfix=""):
         print(f"Saved {name} to {full_path}.")
 
 
+def save_confusion_matrix(matrix, postfix, path, name):
+    heatmap = sns.heatmap(matrix, annot=True, fmt='g')
+    img_path = f"{path}/{name}_hm_{postfix}.png"
+    plt.savefig(img_path)
+    print(f"Saved {name} to {img_path}.")
+    plt.clf()
+
+
 # Print iterations progress
 def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=100, fill='█', time=None):
     """
@@ -158,3 +167,10 @@ def tokenize(tokenizer, train_texts, name):
     print(f"{name} done in: {t_passed}s")
 
     return embeddings
+
+
+def create_dir_if_not_exist(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+        print(f"Created new directory {path}!")
+

@@ -1,6 +1,9 @@
 from types import SimpleNamespace
 
-from transformers import TrainingArguments, AutoModelForSequenceClassification, Trainer
+import numpy as np
+from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, mean_squared_error
+from transformers import TrainingArguments, AutoModelForSequenceClassification, Trainer, IntervalStrategy, \
+    EarlyStoppingCallback
 
 validation_set_size = SimpleNamespace(**{
     "xs": 10,
@@ -15,10 +18,12 @@ validation_set_size = SimpleNamespace(**{
 
 settings = SimpleNamespace(**{
     "re_train_net": False,
-    "validation_size": validation_set_size.m,
+    "seed": 42,
+    "validation_size": validation_set_size.l,
     "train_test_splitfactor": 0.5,
     "test_eval_splitfactor": 0.5,
     "eval_for_comparing": False,
+    "early_stopping": True,
     # "model_names": [
     #     'bert-base-cased',
     #     'distilbert-base-cased',
@@ -31,6 +36,18 @@ settings = SimpleNamespace(**{
     # "model_name": 'bert-base-uncased',
     "model_name": 'distilroberta-base',
 })
+
+
+def compute_metrics(p):
+    pred, labels = p
+    pred = np.argmax(pred, axis=1).astype(float).tolist()
+    labels = np.argmax(labels, axis=1).astype(float).tolist()
+    accuracy = accuracy_score(y_true=labels, y_pred=pred)
+    recall = recall_score(y_true=labels, y_pred=pred, average='weighted')
+    precision = precision_score(y_true=labels, y_pred=pred, average='weighted')
+    mse = mean_squared_error(y_true=labels, y_pred=pred)
+    f1 = f1_score(y_true=labels, y_pred=pred, average='weighted')
+    return {"accuracy": accuracy, "precision": precision, "recall": recall, "mse": mse, "f1": f1}
 
 
 def get_trainer(
@@ -47,29 +64,53 @@ def get_trainer(
     model = AutoModelForSequenceClassification.from_pretrained(
         model_name,
         problem_type='multi_label_classification',
-        num_labels=5
+        num_labels=5,
     )
 
-    args = TrainingArguments(
-        output_dir=save_path,  # output directory
-        num_train_epochs=num_train_epochs,  # total number of training epochs
-        per_device_train_batch_size=16,  # batch size per device during training
-        per_device_eval_batch_size=16,  # batch size for evaluation
-        warmup_steps=500,  # number of warmup steps for learning rate scheduler
-        weight_decay=weight_decay,  # strength of weight decay
-        logging_dir='./logs',  # directory for storing logs
-        logging_steps=logging_steps,
-        learning_rate=learning_rate,
-        auto_find_batch_size=auto_find_batch_size,
-        save_strategy="no"
-        # no_cuda=True
-    )
-
-    trainer = Trainer(
-        model=model,  # the instantiated 🤗 Transformers model to be trained
-        args=args,  # training arguments, defined above
-        train_dataset=train_dataset,  # training dataset
-        eval_dataset=val_dataset  # evaluation dataset
-    )
+    if settings.early_stopping:
+        args = TrainingArguments(
+            output_dir=save_path,
+            evaluation_strategy=IntervalStrategy.STEPS,  # "steps"
+            eval_steps=500,  # Evaluation and Save happens every 50 steps
+            save_total_limit=1,  # Only last 5 models are saved. Older ones are deleted.
+            learning_rate=2e-5,
+            per_device_train_batch_size=16,
+            per_device_eval_batch_size=16,
+            num_train_epochs=3,
+            weight_decay=0.01,
+            push_to_hub=False,
+            metric_for_best_model='f1',
+            auto_find_batch_size=auto_find_batch_size,
+            load_best_model_at_end=True,
+        )
+        trainer = Trainer(
+            model=model,  # the instantiated 🤗 Transformers model to be trained
+            args=args,  # training arguments, defined above
+            train_dataset=train_dataset,  # training dataset
+            eval_dataset=val_dataset,  # evaluation dataset
+            compute_metrics=compute_metrics,
+            callbacks=[EarlyStoppingCallback(early_stopping_patience=3)]
+        )
+    else:
+        args = TrainingArguments(
+            output_dir=save_path,  # output directory
+            num_train_epochs=num_train_epochs,  # total number of training epochs
+            per_device_train_batch_size=16,  # batch size per device during training
+            per_device_eval_batch_size=16,  # batch size for evaluation
+            warmup_steps=500,  # number of warmup steps for learning rate scheduler
+            weight_decay=weight_decay,  # strength of weight decay
+            logging_dir='./logs',  # directory for storing logs
+            logging_steps=logging_steps,
+            learning_rate=learning_rate,
+            auto_find_batch_size=auto_find_batch_size,
+            save_strategy="no"
+            # no_cuda=True
+        )
+        trainer = Trainer(
+            model=model,  # the instantiated 🤗 Transformers model to be trained
+            args=args,  # training arguments, defined above
+            train_dataset=train_dataset,  # training dataset
+            eval_dataset=val_dataset,  # evaluation dataset
+        )
 
     return trainer

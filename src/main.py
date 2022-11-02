@@ -1,5 +1,6 @@
 # %%
 # do imports
+import datetime
 import time
 
 import torch
@@ -7,16 +8,16 @@ from sklearn.metrics import accuracy_score, confusion_matrix, classification_rep
     mean_squared_error
 from sklearn.model_selection import train_test_split
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
-
 import preprocessing
 from fine_tuning import settings
 from helpers import print_task_header, ReviewDataset, printProgressBar, make_predictions, get_cm_as_dict, \
-    print_subtask_header, read_base_data, get_class_report_as_dict, sample_random_points
+    print_subtask_header, read_base_data, get_class_report_as_dict, sample_random_points, write_dict_to_json, \
+    save_confusion_matrix, create_dir_if_not_exist
 from src import fine_tuning, helpers
 
 
 # review_lengths = [1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 750000]
-review_lengths = [750000]
+review_lengths = [20000]
 # review_lengths = [10000]
 
 
@@ -60,7 +61,10 @@ for length in review_lengths:
 
         test_data_changed = False
         if len(test_labels) < settings.validation_size:
-            test_texts, test_labels = sample_random_points(sample_size=settings.validation_size, base_count=100000, seed=42)
+            test_texts, test_labels = sample_random_points(
+                sample_size=settings.validation_size,
+                base_count=100000,
+                seed=settings.seed)
             test_data_changed = True
 
         t_end = time.time()
@@ -93,7 +97,8 @@ for length in review_lengths:
         t_passed = round(t_end - t_start, 2)
         print(f"Done in: {t_passed}s")
 
-        ft_model_name = f'{model_name}-fine_tuned-{train_length}({length})'
+        name_suffix = "_early" if settings.early_stopping else ""
+        ft_model_name = f'{model_name}-fine_tuned{name_suffix}-{train_length}({length})'
         base_path = f'./local_{model_name}/{ft_model_name}'
         final_model_path = f'{base_path}/final'
 
@@ -109,13 +114,16 @@ for length in review_lengths:
                 train_dataset=train_dataset,
                 val_dataset=val_dataset,
             )
-
+            ft_start = time.time()
             trainer.train()
+            ft_end = time.time()
             trainer.save_model(final_model_path)
             res = trainer.evaluate()
+            train_time = round(ft_end - ft_start, 2)
             print(res)
             eval_results = {
                 "name": ft_model_name,
+                "training_time": str(datetime.timedelta(seconds=train_time)),
                 "results": res
             }
             helpers.write_dict_to_json(name="eval", path=final_model_path, results=eval_results)
@@ -125,7 +133,7 @@ for length in review_lengths:
 
         num_test_points = len(test_labels)
         title = f"Classification with fine-tuned '{model_name}' on {num_test_points} data points."
-        print_task_header(title, len(title) +2, True, 1)
+        print_task_header(title, len(title) + 2, True, 1)
 
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
@@ -134,6 +142,8 @@ for length in review_lengths:
             final_model_path,
             problem_type='multi_label_classification'
         ).to(device)
+
+        fi = load_model.feature_importances_
 
         t_start = time.time()
         printProgressBar(0, num_test_points, prefix='Progress:', suffix='Complete', length=50, time=0)
@@ -166,11 +176,13 @@ for length in review_lengths:
         }
 
         postfix = f"{num_test_points}" if test_data_changed else "basic"
-
         if settings.eval_for_comparing:
-            selected_path = f'./tests'
+            selected_path = f'./tests/{num_test_points}_points'
             selected_name = f"{ft_model_name}_testing"
+            create_dir_if_not_exist(selected_path)
         else:
             selected_path = final_model_path
             selected_name = "testing"
-        helpers.write_dict_to_json(name=selected_name, path=selected_path, results=test_dict, postfix=postfix)
+
+        save_confusion_matrix(matrix=cm, postfix=postfix, path=selected_path, name=selected_name)
+        write_dict_to_json(name=selected_name, path=selected_path, results=test_dict, postfix=postfix)
