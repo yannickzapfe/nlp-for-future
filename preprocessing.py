@@ -1,12 +1,7 @@
 import os
-
 import nltk
-nltk.download('punkt')
-nltk.download('stopwords')
-
 import numpy as np
 import pandas as pd
-
 from imblearn.under_sampling import RandomUnderSampler
 from keras import Sequential
 from keras.layers import Embedding, Flatten, Dropout, Dense
@@ -15,6 +10,28 @@ from keras.utils import np_utils
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 
+
+def _download_resources():
+    print('-' * 60)
+    try:
+        nltk.data.find('tokenizers/punkt')
+        print("- 'punkt' already installed")
+    except LookupError:
+        nltk.download('punkt')
+
+    try:
+        nltk.data.find('corpora/stopwords')
+        print("- 'stopwords' already installed")
+    except LookupError:
+        nltk.download('stopwords')
+
+    print('-' * 60, "\n\n")
+
+
+_download_resources()
+
+
+# Download the 'gutenberg' corpus, which is a collection of books in the public domain
 
 # Load first n book reviews including the review text and score in a dataframe.
 def load_books_rating_data(first_n):

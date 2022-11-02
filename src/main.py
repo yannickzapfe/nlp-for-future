@@ -15,12 +15,7 @@ from helpers import print_task_header, ReviewDataset, printProgressBar, make_pre
     save_confusion_matrix, create_dir_if_not_exist
 from src import fine_tuning, helpers
 
-
-# review_lengths = [1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 750000]
-review_lengths = [20000]
-# review_lengths = [10000]
-
-
+review_lengths = settings.review_lengths
 
 for length in review_lengths:
     try:
@@ -36,7 +31,7 @@ for length in review_lengths:
 
         title = f"Fine-tuning and classification for {model_name} with {review_lengths} data points"
         print_task_header(title, len(title) + 4, True)
-        books_data = read_base_data(f'../data/Reviews_data/reviews{length}.csv')
+        books_data = read_base_data(f'../data/Reviews_data/reviews750000.csv')
 
         # step: clear cuda cache
         title = f'Clearing cuda cache'
@@ -52,20 +47,30 @@ for length in review_lengths:
         print_subtask_header(title, len(title) + 4, True, 1)
         t_start = time.time()
         # index to split data on
-        index = int(len(books_data) * settings.train_test_splitfactor)
-
-        train_texts, train_labels = books_data[:index].review.tolist(), books_data[:index].score.tolist()
-        test_data, test_labels = books_data[index:].review.tolist(), books_data[index:].score.tolist()
-        test_texts, val_texts, test_labels, val_labels = train_test_split(test_data, test_labels,
-                                                                          test_size=settings.test_eval_splitfactor)
 
         test_data_changed = False
-        if len(test_labels) < settings.validation_size:
-            test_texts, test_labels = sample_random_points(
-                sample_size=settings.validation_size,
-                base_count=100000,
-                seed=settings.seed)
+        validation_base_size = int(length * (1 - settings.train_test_splitfactor) * settings.test_eval_splitfactor)
+        train_and_eval_size = length - validation_base_size
+        if validation_base_size < settings.validation_size or settings.use_hard_validation_size:
+            books_data = sample_random_points(books_data, train_and_eval_size + settings.validation_size,
+                                              seed=settings.seed)
+            index = int(length * settings.train_test_splitfactor)
+            validation_index = index + validation_base_size
             test_data_changed = True
+            train_texts, train_labels = books_data[:index].review.tolist(), books_data[:index].score.tolist()
+            test_texts, test_labels = books_data[validation_index:].review.tolist(), \
+                                      books_data[validation_index:].score.tolist()
+            val_texts, val_labels = books_data[index:validation_index].review.tolist(),\
+                                    books_data[index:validation_index].score.tolist()
+
+
+        else:
+            books_data = sample_random_points(books_data, length, seed=settings.seed)
+            index = int(len(books_data) * settings.train_test_splitfactor)
+            train_texts, train_labels = books_data[:index].review.tolist(), books_data[:index].score.tolist()
+            test_data, test_labels = books_data[index:].review.tolist(), books_data[index:].score.tolist()
+            test_texts, val_texts, test_labels, val_labels = train_test_split(test_data, test_labels,
+                                                                              test_size=settings.test_eval_splitfactor)
 
         t_end = time.time()
         t_passed = round(t_end - t_start, 2)
@@ -97,8 +102,9 @@ for length in review_lengths:
         t_passed = round(t_end - t_start, 2)
         print(f"Done in: {t_passed}s")
 
+        epochs = f"_ne{settings.num_epochs}" if settings.num_epochs != 3 else ""
         name_suffix = "_early" if settings.early_stopping else ""
-        ft_model_name = f'{model_name}-fine_tuned{name_suffix}-{train_length}({length})'
+        ft_model_name = f'{model_name}-fine_tuned-{train_length}({length}){name_suffix}{epochs}'
         base_path = f'./local_{model_name}/{ft_model_name}'
         final_model_path = f'{base_path}/final'
 
@@ -110,6 +116,7 @@ for length in review_lengths:
                 # trainer arguments
                 model_name=model_name,
                 save_path=base_path,
+                num_train_epochs=settings.num_epochs,
                 # trainer sets
                 train_dataset=train_dataset,
                 val_dataset=val_dataset,
@@ -129,7 +136,8 @@ for length in review_lengths:
             helpers.write_dict_to_json(name="eval", path=final_model_path, results=eval_results)
 
         else:
-            print(f"\n\n\n> Skipping training: Fine-tuned '{model_name}' already trained on {review_lengths} data points.")
+            print(
+                f"\n\n\n> Skipping training: Fine-tuned '{model_name}' already trained on {review_lengths} data points.")
 
         num_test_points = len(test_labels)
         title = f"Classification with fine-tuned '{model_name}' on {num_test_points} data points."
@@ -142,8 +150,6 @@ for length in review_lengths:
             final_model_path,
             problem_type='multi_label_classification'
         ).to(device)
-
-        fi = load_model.feature_importances_
 
         t_start = time.time()
         printProgressBar(0, num_test_points, prefix='Progress:', suffix='Complete', length=50, time=0)

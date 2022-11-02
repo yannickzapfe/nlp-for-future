@@ -8,6 +8,7 @@ import torch
 from matplotlib import pyplot as plt
 import seaborn as sns
 
+
 def print_task_header(text, length=60, space_below=False, space_size=3):
     print("\n\n\n")
     print('-' * length)
@@ -86,9 +87,9 @@ def is_dir_empty(path):
 def get_cm_as_dict(matrix):
     cm_dict = {}
     max_len = len(str(matrix.max()))
-    cm_dict["   "] = str([str(float(num+1)).rjust(max_len) for num in range(0,5)])
+    cm_dict["   "] = str([str(float(num + 1)).rjust(max_len) for num in range(0, 5)])
     for index, row in enumerate(matrix):
-        cm_dict[str(float(index+1))] = str([str(num).rjust(max_len) for num in row])
+        cm_dict[str(float(index + 1))] = str([str(num).rjust(max_len) for num in row])
 
     return cm_dict
 
@@ -104,13 +105,8 @@ def get_class_report_as_dict(report):
     return cr_dict
 
 
-def sample_random_points(sample_size=100, base_count=750000, seed=None):
-    books_data = pd.read_csv(f'../data/Reviews_data/reviews{base_count}.csv')
-    if sample_size > base_count:
-        print(f"Attempted to take more samples than base data has.\n-> Taking all data from base data ({base_count}).")
-        sample_size = base_count
-    samples = books_data.sample(n=sample_size, random_state=seed)
-    return samples.review.tolist(), samples.score.tolist()
+def sample_random_points(dataset: pd.DataFrame, sample_size=100, seed=None):
+    return dataset.sample(n=sample_size, random_state=seed)
 
 
 def write_dict_to_json(name, path, results, postfix=""):
@@ -173,4 +169,3 @@ def create_dir_if_not_exist(path):
     if not os.path.exists(path):
         os.makedirs(path)
         print(f"Created new directory {path}!")
-

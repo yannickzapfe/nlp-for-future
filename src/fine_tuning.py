@@ -11,19 +11,20 @@ validation_set_size = SimpleNamespace(**{
     "m": 1000,
     "l": 10000,
     "xl": 100000,
-    "xxl": 200000,
-    "xxxl": 500000,
-    "all": 750000
 })
 
 settings = SimpleNamespace(**{
     "re_train_net": False,
     "seed": 42,
-    "validation_size": validation_set_size.l,
+    "validation_size": validation_set_size.xl,
     "train_test_splitfactor": 0.5,
     "test_eval_splitfactor": 0.5,
-    "eval_for_comparing": False,
+    "use_hard_validation_size": False,
+    "eval_for_comparing": True,
     "early_stopping": True,
+    "num_epochs": 10,
+    # "review_lengths": [1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 750000],
+    "review_lengths": [20000],
     # "model_names": [
     #     'bert-base-cased',
     #     'distilbert-base-cased',
@@ -76,12 +77,13 @@ def get_trainer(
             learning_rate=2e-5,
             per_device_train_batch_size=16,
             per_device_eval_batch_size=16,
-            num_train_epochs=3,
+            num_train_epochs=num_train_epochs,
             weight_decay=0.01,
             push_to_hub=False,
             metric_for_best_model='f1',
             auto_find_batch_size=auto_find_batch_size,
             load_best_model_at_end=True,
+            logging_dir="./logs"
         )
         trainer = Trainer(
             model=model,  # the instantiated 🤗 Transformers model to be trained
@@ -103,7 +105,7 @@ def get_trainer(
             logging_steps=logging_steps,
             learning_rate=learning_rate,
             auto_find_batch_size=auto_find_batch_size,
-            save_strategy="no"
+            save_strategy="no",
             # no_cuda=True
         )
         trainer = Trainer(
