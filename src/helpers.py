@@ -34,8 +34,9 @@ def read_base_data(path):
     chunksize = 100000
     temp_chunks = []
     with pd.read_csv(path, chunksize=chunksize) as reader:
-        for chunk in reader:
+        for index, chunk in enumerate(reader):
             temp_chunks.append(chunk)
+            print(f"processed chunk {index+1} of {len(reader)}")
     books_data = pd.concat(temp_chunks)
     t_end = time.time()
     t_passed = round(t_end - t_start, 2)

@@ -25,6 +25,8 @@ for length in review_lengths:
         print("Couldn't find a model to train")
         break
 
+    print("=================== START =================== ")
+
     for model_name in model_names:
 
         title = f"Fine-tuning and classification for {model_name} with {review_lengths} data points"
