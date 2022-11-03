@@ -13,7 +13,8 @@ from fine_tuning import settings
 from helpers import print_task_header, ReviewDataset, printProgressBar, make_predictions, get_cm_as_dict, \
     print_subtask_header, read_base_data, get_class_report_as_dict, sample_random_points, write_dict_to_json, \
     save_confusion_matrix, create_dir_if_not_exist
-from src import fine_tuning, helpers
+import fine_tuning
+import helpers
 
 review_lengths = settings.review_lengths
 

@@ -26,7 +26,7 @@ for model_name in model_names:
 
     tokenizers[model_name] = tokenizer
 
-    model_folder_name = f'{model_name}-fine_tuned-10000(20000)'
+    model_folder_name = f'{model_name}-fine_tuned-14000(20000)_early_ne10'
     base_path = f'./local_{model_name}/{model_folder_name}'
     model_path = f'{base_path}/final'
 

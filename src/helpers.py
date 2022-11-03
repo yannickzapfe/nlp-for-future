@@ -31,7 +31,12 @@ def read_base_data(path):
     title = f'Reading base data'
     print_subtask_header(title, len(title) + 4)
     t_start = time.time()
-    books_data = pd.read_csv(path)
+    chunksize = 100000
+    temp_chunks = []
+    with pd.read_csv(path, chunksize=chunksize) as reader:
+        for chunk in reader:
+            temp_chunks.append(chunk)
+    books_data = pd.concat(temp_chunks)
     t_end = time.time()
     t_passed = round(t_end - t_start, 2)
     print(f"Done in: {t_passed}s")
