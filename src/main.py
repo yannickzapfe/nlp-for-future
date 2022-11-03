@@ -21,11 +21,8 @@ for length in review_lengths:
     try:
         model_names = settings.model_names
     except AttributeError:
-        try:
-            model_names = [settings.model_name]
-        except AttributeError:
-            print("Couldn't find a model to train")
-            break
+        print("Couldn't find a model to train")
+        break
 
     for model_name in model_names:
 

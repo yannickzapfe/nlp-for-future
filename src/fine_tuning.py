@@ -17,25 +17,25 @@ settings = SimpleNamespace(**{
     "re_train_net": False,
     "seed": 42,
     "validation_size": validation_set_size.xl,
-    "train_test_splitfactor": 0.5,
+    "train_test_splitfactor": 0.7,
     "test_eval_splitfactor": 0.5,
     "use_hard_validation_size": False,
-    "eval_for_comparing": True,
+    "eval_for_comparing": False,
     "early_stopping": True,
     "num_epochs": 10,
     # "review_lengths": [1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 750000],
-    "review_lengths": [20000],
-    # "model_names": [
-    #     'bert-base-cased',
-    #     'distilbert-base-cased',
-    #     'distilbert-base-uncased',
-    #     'distilroberta-base'
-    # ],
-    # "model_name": 'distilbert-base-cased',
-    # "model_name": 'distilbert-base-uncased',
-    # "model_name": 'bert-base-cased',
-    # "model_name": 'bert-base-uncased',
-    "model_name": 'distilroberta-base',
+    "review_lengths": [750000],
+    "model_names": [
+       # 'bert-base-cased',
+       # 'distilbert-base-cased',
+       # 'distilbert-base-uncased',
+        'distilroberta-base'
+    ],
+    # "model_names": ['distilbert-base-cased'],
+    # "model_names": ['distilbert-base-uncased'],
+    # "model_names": ['bert-base-cased'],
+    # "model_names": ['bert-base-uncased'],
+    # "model_names": 'distilroberta-base',
 })
 
 
