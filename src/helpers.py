@@ -5,6 +5,7 @@ import time
 
 import pandas as pd
 import torch
+from keras.utils import np_utils
 from matplotlib import pyplot as plt
 import seaborn as sns
 
@@ -25,6 +26,10 @@ def print_subtask_header(text, length=30, space_above=False, a_space_size=3, spa
     print('-' * length)
     if space_below:
         print("\n" * b_space_size)
+
+
+def one_hot_encode(scores):
+    return np_utils.to_categorical([int(score) - 1 for score in scores])
 
 
 def read_base_data(path):

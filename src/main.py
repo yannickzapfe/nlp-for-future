@@ -8,7 +8,6 @@ from sklearn.metrics import accuracy_score, confusion_matrix, classification_rep
     mean_squared_error
 from sklearn.model_selection import train_test_split
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
-import preprocessing
 from fine_tuning import settings
 from helpers import print_task_header, ReviewDataset, printProgressBar, make_predictions, get_cm_as_dict, \
     print_subtask_header, read_base_data, get_class_report_as_dict, sample_random_points, write_dict_to_json, \
@@ -95,9 +94,9 @@ for length in review_lengths:
         title = f'Dataset creation'
         print_subtask_header(title, len(title) + 4, True, 1)
         t_start = time.time()
-        train_dataset = ReviewDataset(train_encodings, preprocessing.one_hot_encode(train_labels))
-        val_dataset = ReviewDataset(val_encodings, preprocessing.one_hot_encode(val_labels))
-        test_dataset = ReviewDataset(test_encodings, preprocessing.one_hot_encode(test_labels))
+        train_dataset = ReviewDataset(train_encodings, helpers.one_hot_encode(train_labels))
+        val_dataset = ReviewDataset(val_encodings, helpers.one_hot_encode(val_labels))
+        test_dataset = ReviewDataset(test_encodings, helpers.one_hot_encode(test_labels))
         t_end = time.time()
         t_passed = round(t_end - t_start, 2)
         print(f"Done in: {t_passed}s")
